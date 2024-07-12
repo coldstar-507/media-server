@@ -1,0 +1,53 @@
+package logger
+
+import (
+	"log"
+	"os"
+	"path/filepath"
+
+	"github.com/coldstar-507/media-server/internal/paths"
+)
+
+var (
+	Logger  *log.Logger
+	logFile *os.File
+	err     error
+)
+
+func InitLogger() {
+	wd, er := os.Getwd()
+	if er != nil {
+		log.Fatalln("Getwd error: ", er)
+	}
+
+	// walkFn := func(path string, info os.FileInfo, err error) error {
+	// 	if err != nil {
+	// 		log.Printf("Error accessing path %q: %v\n", path, err)
+	// 		return err
+	// 	}
+	// 	if !info.IsDir() {
+	// 		// Print the path of the file
+	// 		log.Println(path)
+	// 	}
+	// 	return nil
+	// }
+
+	// // Start walking the directory recursively
+	// err := filepath.Walk(wd, walkFn)
+	// if err != nil {
+	// 	log.Printf("Error walking directory %q: %v\n", wd, err)
+	// }
+
+	log.Println("Wd: ", wd)
+	path := filepath.Join(paths.LOGS_PATH, "logs.txt")
+	flags := os.O_CREATE | os.O_WRONLY | os.O_APPEND
+	logFile, err = os.OpenFile(path, flags, 0644)
+	if err != nil {
+		log.Fatalln("InitLogger error opening log file: ", err)
+	}
+	Logger = log.New(logFile, "", log.LstdFlags)
+}
+
+func CloseLogger() {
+	logFile.Close()
+}

@@ -1,0 +1,19 @@
+package handlers
+
+import (
+	"log"
+	"net/http"
+	"os"
+
+	"github.com/coldstar-507/media-server/internal/paths"
+)
+
+func HandleDeleteMedia(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	path := paths.MakeStaticPath(id)
+	if err := os.Remove(path); err != nil {
+		log.Println("HandleDeleteMedia error removing file:", err)
+		w.WriteHeader(500)
+		return
+	}
+}
