@@ -11,8 +11,8 @@ import (
 	"github.com/coldstar-507/media-server/internal/paths"
 )
 
-func StreamMedia(id string, temp bool, w io.Writer) error {
-	path := paths.MakeMediaPath(id, temp)
+func StreamMedia(id string, permanent bool, w io.Writer) error {
+	path := paths.MakeMediaPath(id, permanent)
 	f, err := os.Open(path)
 	if err != nil {
 		return fmt.Errorf("StreamMedia error opening file: %v", err)
@@ -35,8 +35,9 @@ func StreamMedia(id string, temp bool, w io.Writer) error {
 }
 
 func HandleStreamMedia(w http.ResponseWriter, r *http.Request) {
-	id, temp := r.PathValue("id"), r.PathValue("temp") == "true"
-	if err := StreamMedia(id, temp, w); err != nil {
+	id := r.PathValue("id")
+	permanent := paths.IsPermanent(id)
+	if err := StreamMedia(id, permanent, w); err != nil {
 		w.WriteHeader(500)
 		log.Println("HandleStreamMedia error: ", err)
 	}

@@ -11,8 +11,8 @@ import (
 	"github.com/coldstar-507/media-server/internal/paths"
 )
 
-func ReadMetadata(id string, temp bool, w io.Writer) error {
-	path := paths.MakeMediaPath(id, temp)
+func ReadMetadata(id string, permanent bool, w io.Writer) error {
+	path := paths.MakeMediaPath(id, permanent)
 	f, err := os.Open(path)
 	if err != nil {
 		return fmt.Errorf("ReadMetadata error opening file: %v", err)
@@ -31,8 +31,9 @@ func ReadMetadata(id string, temp bool, w io.Writer) error {
 }
 
 func HandleGetMetadata(w http.ResponseWriter, r *http.Request) {
-	id, temp := r.PathValue("id"), r.PathValue("temp") == "true"
-	if err := ReadMetadata(id, temp, w); err != nil {
+	id := r.PathValue("id")
+	permanent := paths.IsPermanent(id)
+	if err := ReadMetadata(id, permanent, w); err != nil {
 		log.Println("HandleGetMetadata error: ", err)
 		w.WriteHeader(500)
 	}

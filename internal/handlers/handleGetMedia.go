@@ -10,8 +10,8 @@ import (
 	"github.com/coldstar-507/media-server/internal/paths"
 )
 
-func ReadMedia(id string, temp bool, w io.Writer) error {
-	path := paths.MakeMediaPath(id, temp)
+func ReadMedia(id string, permanent bool, w io.Writer) error {
+	path := paths.MakeMediaPath(id, permanent)
 	f, err := os.Open(path)
 	if err != nil {
 		return fmt.Errorf("ReadMedia error opening file: %v", err)
@@ -24,9 +24,10 @@ func ReadMedia(id string, temp bool, w io.Writer) error {
 }
 
 func HandleGetMedia(w http.ResponseWriter, r *http.Request) {
-	id, temp := r.PathValue("id"), r.PathValue("temp") == "true"
-	if err := ReadMedia(id, temp, w); err != nil {
-		log.Printf("HandleGetMedia error id=%s, temp=%v: %v\n", id, temp, err)
+	id := r.PathValue("id")
+	permanent := paths.IsPermanent(id)
+	if err := ReadMedia(id, permanent, w); err != nil {
+		log.Printf("HandleGetMedia error id=%s, permanent=%v: %v\n", id, permanent, err)
 		w.WriteHeader(500)
 	}
 }

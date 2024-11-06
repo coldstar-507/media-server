@@ -1,27 +1,10 @@
 package main
 
 import (
-	// "fmt"
-	"log"
-	// "math"
-	"os"
-	// "strconv"
-	// "time"
+	"github.com/coldstar-507/media-server/internal/handlers"
 )
 
 func main() {
-	wd, err := os.Getwd()
-	if err != nil {
-		log.Fatalln("CreateDirPaths error on os.Getwd:", err)
-	}
-
-	log.Println("wd=", wd)
-
-	// t1 := time.Now()
-
-	// fmt.Println(t1.UnixMilli())
-	// fmt.Println(math.MaxUint32)
-	// mu := strconv.FormatUint(math.MaxUint64, 10)
-	// fmt.Println(mu)
-
+	uid := handlers.Uuid()
+	print(uid)
 }

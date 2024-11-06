@@ -4,12 +4,15 @@ import (
 	// "errors"
 	// "log"
 	// "os"
+	// "log"
+	// "os"
 	"path/filepath"
+	// "github.com/coldstar-507/utils"
 )
 
 var (
 	_DOCKER_APP_PATH     = "/app/"
-	_LOCAL_APP_PATH      = "/home/scott/dev/down4/go-custom-back/media-server/"
+	_LOCAL_APP_PATH      = "./"
 	APP_PATH             string
 	DATA_PATH            string
 	TEMPORARY_MEDIA_PATH string
@@ -17,12 +20,8 @@ var (
 	LOGS_PATH            string
 )
 
-func InitWD(testing bool) {
-	if testing {
-		APP_PATH = _LOCAL_APP_PATH
-	} else {
-		APP_PATH = _DOCKER_APP_PATH
-	}
+func InitWD(appPath string) {
+	APP_PATH = appPath
 	DATA_PATH = filepath.Join(APP_PATH, "data")
 	TEMPORARY_MEDIA_PATH = filepath.Join(DATA_PATH, "temp")
 	STATIC_MEDIA_PATH = filepath.Join(DATA_PATH, "static")
@@ -40,18 +39,22 @@ func InitWD(testing bool) {
 // 	}
 // }
 
-func MakeTempPath(id string) string {
-	return MakeMediaPath(id, true)
+func IsPermanent(id string) bool {
+	return id[len(id)-2:] == "01"
 }
 
-func MakeStaticPath(id string) string {
+func MakeTempPath(id string) string {
 	return MakeMediaPath(id, false)
 }
 
-func MakeMediaPath(id string, temporary bool) string {
-	if temporary {
-		return filepath.Join(TEMPORARY_MEDIA_PATH, id)
-	} else {
+func MakeStaticPath(id string) string {
+	return MakeMediaPath(id, true)
+}
+
+func MakeMediaPath(id string, permanent bool) string {
+	if permanent {
 		return filepath.Join(STATIC_MEDIA_PATH, id)
+	} else {
+		return filepath.Join(TEMPORARY_MEDIA_PATH, id)
 	}
 }
