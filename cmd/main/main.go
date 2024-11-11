@@ -23,14 +23,16 @@ var (
 )
 
 func main() {
-	// paths.CreateDirPaths()
-	paths.InitWD("/home/scott/dev/down4/backend/media-server")
+
 	log.Println("Starting hook manager")
 	go handlers.HookManager.Run()
 
 	log.Println("Starting local router")
 	utils.InitLocalRouter(ip, st, place)
 	go utils.LocalRouter.Run()
+
+	paths.InitWD()
+
 	// logger.InitLogger() // We don't use this logger yet
 	// defer logger.CloseLogger()
 	mux := http.NewServeMux()

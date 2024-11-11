@@ -1,0 +1,14 @@
+# set up this file if not adequate and source it
+
+SERVER_FOLDER="$HOME/.media-server"
+
+export PERMANENT_PATH=$SERVER_FOLDER/permanent
+export TEMPORARY_PATH=$SERVER_FOLDER/temporary
+export LOGS_PATH=$SERVER_FOLDER/logs
+
+mkdir -p $PERMANENT_PATH $TEMPORARY_PATH $LOGS_PATH
+
+echo "server folder  : $SERVER_FOLDER"
+echo "permanent path : $PERMANENT_PATH"
+echo "temporary path : $TEMPORARY_PATH"
+echo "logs path      : $LOGS_PATH"

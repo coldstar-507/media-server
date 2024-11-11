@@ -16,11 +16,11 @@ var (
 	content  = []byte{0, 6, 0, 1, 2, 3, 4, 5, 10, 11, 12, 13}
 	metadata = content[2 : 2+6]
 	data     = content[2+6:]
-	realHex  = "000001914cd0eca80100000001914cd0bf7e9e62823103e20400000007010d"
+	realHex  = "000001914cd0eca80100000001914cd0bf7e9e62823103e2040000000701"
 )
 
 func TestMain(m *testing.M) {
-	paths.InitWD("/home/scott/dev/down4/backend/media-server")
+	paths.InitWD()
 	code := m.Run()
 	os.Exit(code)
 }
@@ -54,7 +54,8 @@ func TestHandleReadMetadata(t *testing.T) {
 		t.Error("TestHandleReadMetadata error streaming media: ", err)
 	}
 	if !bytes.Equal(buf.Bytes(), metadata) {
-		t.Errorf("TestHandleReadMetadata error: expected=%v, got=%v\n", metadata, buf.Bytes())
+		t.Errorf("TestHandleReadMetadata error: expected=%v, got=%v\n",
+			metadata, buf.Bytes())
 	}
 }
 
@@ -64,7 +65,8 @@ func TestHandleReadMedia(t *testing.T) {
 		t.Error("TestHandleReadMedia error reading media: ", err)
 	}
 	if !bytes.Equal(buf.Bytes(), content) {
-		t.Errorf("TestHandleReadMedia error: expected=%v, got=%v\n", content, buf.Bytes())
+		t.Errorf("TestHandleReadMedia error: expected=%v, got=%v\n",
+			content, buf.Bytes())
 	}
 }
 
