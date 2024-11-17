@@ -5,9 +5,9 @@ import (
 	"net/http"
 
 	"github.com/coldstar-507/media-server/internal/handlers"
-	// "github.com/coldstar-507/media-server/internal/logger"
 	"github.com/coldstar-507/media-server/internal/paths"
-	"github.com/coldstar-507/utils"
+	"github.com/coldstar-507/router/router_utils"
+	"github.com/coldstar-507/utils/http_utils"
 )
 
 // files are saved on disk in this way:
@@ -17,9 +17,9 @@ import (
 
 // this should be part of the ENV in production
 var (
-	ip    string            = "localhost"
-	st    utils.SERVER_TYPE = utils.MEDIA_ROUTER
-	place uint16            = 0x0100
+	ip         string                     = "localhost"
+	place      router_utils.SERVER_NUMBER = "0x0100"
+	routerType router_utils.ROUTER_TYPE   = router_utils.MEDIA_ROUTER
 )
 
 func main() {
@@ -28,16 +28,18 @@ func main() {
 	go handlers.HookManager.Run()
 
 	log.Println("Starting local router")
-	utils.InitLocalRouter(ip, st, place)
-	go utils.LocalRouter.Run()
+	router_utils.InitLocalServer(ip, place, routerType)
+	go router_utils.LocalServer.Run()
 
 	paths.InitWD()
 
 	// logger.InitLogger() // We don't use this logger yet
 	// defer logger.CloseLogger()
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /ping", utils.HandlePing)
-	mux.HandleFunc("GET /route-scores", utils.HandleScoreRequest)
+	mux.HandleFunc("GET /ping", router_utils.HandlePing)
+	mux.HandleFunc("GET /route-scores", router_utils.HandleScoreRequest)
+	mux.HandleFunc("GET /local-router", router_utils.HandleServerStatus)
+	mux.HandleFunc("GET /full-router", router_utils.HandleRouterStatus)
 
 	mux.HandleFunc("GET /media/{id}", handlers.HandleGetMedia)
 	mux.HandleFunc("POST /media/{id}", handlers.HandlePostMedia)
@@ -54,10 +56,7 @@ func main() {
 	mux.HandleFunc("POST /generate-media", handlers.HandleGenerateMedia)
 	mux.HandleFunc("POST /generate-media-hook", handlers.HandleGenerateMediaHook)
 
-	server := utils.ApplyMiddlewares(mux,
-		// utils.HttpLogging,
-		utils.StatusLogger,
-	)
+	server := http_utils.ApplyMiddlewares(mux, http_utils.StatusLogger)
 
 	addr := "0.0.0.0:8081"
 	// crt, key := "../service-accounts/server.crt", "../service-accounts/server.key"
