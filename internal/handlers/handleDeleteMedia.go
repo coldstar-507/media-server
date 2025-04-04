@@ -16,7 +16,8 @@ func RemoveMedia(id string, isPermanent bool) error {
 func HandleDeleteMedia(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	isPermanent := paths.IsPermanent(id)
-	if err := RemoveMedia(id, isPermanent); err != nil {
+	err := RemoveMedia(id, isPermanent)
+	if err != nil {
 		log.Println("HandleDeleteMedia error removing file:", err)
 		w.WriteHeader(500)
 		return

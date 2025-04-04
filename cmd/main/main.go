@@ -18,7 +18,7 @@ import (
 // this should be part of the ENV in production
 var (
 	ip         string                     = "localhost"
-	place      router_utils.SERVER_NUMBER = "0x0100"
+	place      router_utils.SERVER_NUMBER = "2000"
 	routerType router_utils.ROUTER_TYPE   = router_utils.MEDIA_ROUTER
 )
 
@@ -32,6 +32,7 @@ func main() {
 	go router_utils.LocalServer.Run()
 
 	paths.InitWD()
+	go handlers.PriceAgent.Run()
 
 	// logger.InitLogger() // We don't use this logger yet
 	// defer logger.CloseLogger()
@@ -48,6 +49,7 @@ func main() {
 	mux.HandleFunc("GET /stream-media/{id}", handlers.HandleStreamMedia)
 	mux.HandleFunc("GET /metadata/{id}", handlers.HandleGetMetadata)
 
+	mux.HandleFunc("GET /rates/{until}/{periodicity}", handlers.HandleRatesRequest)
 	// payments are currently sent to chat server with pushId
 	// they aren't though
 	mux.HandleFunc("GET /payment/{id}", handlers.HandleGetPayment)

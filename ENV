@@ -5,10 +5,12 @@ SERVER_FOLDER="$HOME/.media-server"
 export PERMANENT_PATH=$SERVER_FOLDER/permanent
 export TEMPORARY_PATH=$SERVER_FOLDER/temporary
 export LOGS_PATH=$SERVER_FOLDER/logs
+export RATES_PATH=$SERVER_FOLDER/rates
 
-mkdir -p $PERMANENT_PATH $TEMPORARY_PATH $LOGS_PATH
+mkdir -p $PERMANENT_PATH $TEMPORARY_PATH $LOGS_PATH $RATES_PATH
 
 echo "server folder  : $SERVER_FOLDER"
 echo "permanent path : $PERMANENT_PATH"
 echo "temporary path : $TEMPORARY_PATH"
 echo "logs path      : $LOGS_PATH"
+echo "rates path     : $RATES_PATH"
