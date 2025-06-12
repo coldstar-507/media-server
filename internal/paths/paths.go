@@ -13,6 +13,8 @@ var (
 	HISTORICAL_RATES_FILE  string
 	FIFTEEN_MIN_RATES_FILE string
 	ONE_HOUR_RATES_FILE    string
+	TEMP_IDS_FILE          string
+	PERM_IDS_FILE          string
 )
 
 func InitWD() {
@@ -31,6 +33,8 @@ func InitWD() {
 		panic("RATES_PATH undefined, please check ENV file at root of project")
 	}
 
+	TEMP_IDS_FILE = filepath.Join(TEMPORARY_PATH, "ids")
+	PERM_IDS_FILE = filepath.Join(PERMANENT_PATH, "ids")
 	HISTORICAL_RATES_FILE = filepath.Join(RATES_PATH, "historical")
 	ONE_HOUR_RATES_FILE = filepath.Join(RATES_PATH, "one_hour_rates")
 	FIFTEEN_MIN_RATES_FILE = filepath.Join(RATES_PATH, "fifteen_min_rates")
@@ -40,12 +44,31 @@ func IsPermanent(id string) bool {
 	return id[len(id)-2:] == "01"
 }
 
-func MakeTempPath(id string) string {
-	return MakeMediaPath(id, false)
+// func MakeTempPath(id string) string {
+// 	return MakeMediaPath(id, false)
+// }
+
+// func MakeStaticPath(id string) string {
+// 	return MakeMediaPath(id, true)
+// }
+
+func MakePath(folder, id string) string {
+	if IsPermanent(id) {
+		return filepath.Join(PERMANENT_PATH, folder, id)
+	} else {
+		return filepath.Join(TEMPORARY_PATH, folder, id)
+	}
 }
 
-func MakeStaticPath(id string) string {
-	return MakeMediaPath(id, true)
+func MakePathExt(folder, id, ext string) string {
+	if len(ext) == 0 {
+		return MakePath(folder, id)
+	}
+	if IsPermanent(id) {
+		return filepath.Join(PERMANENT_PATH, folder, id+"."+ext)
+	} else {
+		return filepath.Join(TEMPORARY_PATH, folder, id+"."+ext)
+	}
 }
 
 func MakeMediaPath(id string, permanent bool) string {

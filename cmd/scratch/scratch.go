@@ -1,188 +1,92 @@
 package main
 
 import (
-	"bytes"
-	"encoding/binary"
+	_ "embed"
 	"encoding/json"
 	"fmt"
-	"io"
+	"log"
 	"net/http"
-	"os"
-	"time"
 )
 
-var (
-	xurl = "https://api.whatsonchain.com/v1/bsv/main/exchangerate/historical?from=%d&to=%d"
-)
+//go:embed assets/countries.geo.json
+var countriesJSON []byte
 
-func makeUrl(from, to int64) string {
-	return fmt.Sprintf(xurl, from, to)
+var geoData GeoData
+
+// type Point struct {
+// 	Lat float64 `json:"latitude"`
+// 	Lon float64 `json:"longitude"`
+// }
+
+// var coords map[string][][]Point
+var coords_ map[string]any
+
+type GeoData struct {
+	Type     string `json:"type"`
+	Features []struct {
+		Type       string `json:"type"`
+		Id         string `json:"id"`
+		Properties struct {
+			Name string `json:"name"`
+		} `json:"properties"`
+		Geometry struct {
+			Type        string    `json:"type"`
+			Coordinates [][][]any `json:"coordinates"`
+		} `json:"geometry"`
+	} `json:"features"`
 }
 
-func must(err error) {
+func InitCoords() {
+	err := json.Unmarshal(countriesJSON, &geoData)
 	if err != nil {
-		panic(err)
+		log.Fatal("initCoords: error unmarshaling JSON:", err)
+	}
+	coords_ = make(map[string]any, len(geoData.Features))
+	for _, x := range geoData.Features {
+		fmt.Println(x.Properties.Name)
+		coords_[x.Properties.Name] = x.Geometry
 	}
 }
 
-func appendFrom(latest int64) error {
-	now := time.Now().Unix()
-	f, err := os.OpenFile("./rates", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		return fmt.Errorf("error opening file: %w", err)
+func HandleGetCoords(w http.ResponseWriter, r *http.Request) {
+	countryName := r.PathValue("country")
+	if val := coords_[countryName]; val == nil {
+		w.WriteHeader(500)
+	} else if err := json.NewEncoder(w).Encode(val); err != nil {
+		w.WriteHeader(501)
 	}
-
-	url := makeUrl(latest, now)
-	fmt.Println(url)
-	res, err := http.Get(url)
-	if err != nil {
-		return fmt.Errorf("error making http request: %w", err)
-	}
-
-	var j []struct {
-		Rate float32 `json:"rate"`
-		Time int64   `json:"time"`
-	}
-
-	err = json.NewDecoder(res.Body).Decode(&j)
-	if err != nil {
-		return fmt.Errorf("error decoding json response: %w", err)
-	}
-
-	for _, m := range j {
-		if latest == m.Time {
-			fmt.Printf("skipping %d (equals latest)\n", m.Time)
-			continue
-		}
-		fmt.Printf("rate=%f, time=%d\n", m.Rate, m.Time)
-		binary.Write(f, binary.BigEndian, m.Rate)
-		binary.Write(f, binary.BigEndian, m.Time)
-	}
-
-	err = f.Close()
-	if err != nil {
-		return fmt.Errorf("error closing file: %w", err)
-	}
-	return nil
-}
-
-func write() {
-	now := time.Now()
-	weekAgo := now.Add(time.Hour * 24 * 2 * -1)
-
-	f, err := os.Create("./rates")
-	must(err)
-
-	url := makeUrl(weekAgo.Unix(), now.Unix())
-	fmt.Println(url)
-	res, err := http.Get(url)
-	must(err)
-
-	var j []struct {
-		Rate float32 `json:"rate"`
-		Time int64   `json:"time"`
-	}
-
-	err = json.NewDecoder(res.Body).Decode(&j)
-	must(err)
-
-	for _, m := range j {
-		fmt.Printf("rate=%f, time=%d\n", m.Rate, m.Time)
-		binary.Write(f, binary.BigEndian, m.Rate)
-		binary.Write(f, binary.BigEndian, m.Time)
-	}
-
-	err = f.Close()
-	must(err)
-	// must(err)
 }
 
 func main() {
-	now := time.Now()
-	weekAgo := now.Add(-1 * time.Hour * 24 * 7)
-	fmt.Println(appendFrom(weekAgo.Unix()))
-	lt, err := latestTime()
-	fmt.Println(err)
-	fmt.Println(appendFrom(lt))
-	buf := bytes.NewBuffer(make([]byte, 0, 512))
-	fmt.Println(readUntil(buf, weekAgo.Unix()))
+	InitCoords()
+	country := "Canada"
+	c := coords_[country]
+	e, err := json.MarshalIndent(c, "", "   ")
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(string(e))
 }
 
-func readUntil(w io.Writer, until int64) error {
-	// Open the file
-	file, err := os.Open("./rates")
-	if err != nil {
-		return fmt.Errorf("failed to open file: %w", err)
-	}
-	defer file.Close()
+// func main() {
+// 	err := json.Unmarshal(countriesJSON, &geoData)
+// 	if err != nil {
+// 		log.Fatal("Error unmarshaling JSON:", err)
+// 	}
 
-	// Get the file size
-	fileInfo, err := file.Stat()
-	if err != nil {
-		return fmt.Errorf("failed to stat file: %w", err)
-	}
-
-	// Get the size of the file
-	fileSize := fileInfo.Size()
-
-	// Define the block size (12 bytes)
-	blockSize := int64(12)
-
-	// Loop to read 12-byte blocks from the end
-	var time int64
-	var rate float32
-	for position := fileSize - blockSize; position >= 0; position -= blockSize {
-		// Seek to the position
-		_, err := file.Seek(position, 0)
-		if err != nil {
-			return fmt.Errorf("failed to seek: %w", err)
-		}
-
-		// Read the 12-byte block
-		if err = binary.Read(file, binary.BigEndian, &rate); err != nil {
-			return fmt.Errorf("failed to read rate: %w", err)
-		}
-		if err = binary.Read(file, binary.BigEndian, &time); err != nil {
-			return fmt.Errorf("failed to read time: %w", err)
-		}
-
-		if time > until {
-			binary.Write(w, binary.BigEndian, rate)
-			binary.Write(w, binary.BigEndian, time)
-		}
-		// Process the block (for now, print it)
-		fmt.Printf("Rate/Time at position %d: rate: %f, time: %d\n", position, rate, time)
-	}
-
-	return nil
-
-}
-
-func latestTime() (int64, error) {
-	file, err := os.Open("./rates")
-	if err != nil {
-		return 0, fmt.Errorf("failed to open file: %w", err)
-	}
-	defer file.Close()
-
-	fileInfo, err := file.Stat()
-	if err != nil {
-		return 0, fmt.Errorf("failed to stat file: %w", err)
-	}
-
-	fileSize := fileInfo.Size()
-
-	blockSize := int64(8)
-	position := fileSize - blockSize
-
-	_, err = file.Seek(position, 0)
-	if err != nil {
-		return 0, fmt.Errorf("failed to seek: %w", err)
-	}
-
-	var time int64
-	if err = binary.Read(file, binary.BigEndian, &time); err != nil {
-		return 0, fmt.Errorf("failed to read time: %w", err)
-	}
-	return time, nil
-}
+// 	// coords = make(map[string][][]Point, len(geoData.Features))
+// 	for _, x := range geoData.Features {
+// 		fmt.Println(x.Properties.Name)
+// 		// fmt.Println(x.Geometry.Coordinates[0][0]...)
+// 		// polys := make([][]Point, 0, len(x.Geometry.Coordinates))
+// 		// for _, poly := range x.Geometry.Coordinates {
+// 		// 	pol := make([]Point, 0, len(poly))
+// 		// 	for _, point := range poly {
+// 		// 		p := Point{Lat: point[0].(float64), Lon: point[1].(float64)}
+// 		// 		pol = append(pol, p)
+// 		// 	}
+// 		// 	polys = append(polys, pol)
+// 		// }
+// 		coords_[x.Properties.Name] = x.Geometry.Coordinates
+// 	}
+// }

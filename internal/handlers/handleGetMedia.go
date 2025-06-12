@@ -1,33 +1,50 @@
 package handlers
 
 import (
-	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"os"
 
 	"github.com/coldstar-507/media-server/internal/paths"
+	// media_utils "github.com/coldstar-507/media-server/internal/utils"
 )
 
-func ReadMedia(id string, permanent bool, w io.Writer) error {
-	path := paths.MakeMediaPath(id, permanent)
+func ReadFileTo(w io.Writer, path string) error {
 	f, err := os.Open(path)
 	if err != nil {
-		return fmt.Errorf("ReadMedia error opening file: %v", err)
+		return err
 	}
 	defer f.Close()
 	if _, err := io.Copy(w, f); err != nil && err != io.EOF {
-		return fmt.Errorf("ReadMedia error copying file: %v", err)
+		return err
 	}
 	return nil
 }
 
 func HandleGetMedia(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
-	permanent := paths.IsPermanent(id)
-	if err := ReadMedia(id, permanent, w); err != nil {
-		log.Printf("HandleGetMedia error id=%s, permanent=%v: %v\n", id, permanent, err)
+	path := paths.MakePathExt("data", id, "webp")
+	if err := ReadFileTo(w, path); err != nil {
+		log.Printf("HandleGetMedia error path=%s: %v\n", path, err)
+		w.WriteHeader(500)
+	}
+}
+
+func HandleGetThumbnail(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	path := paths.MakePathExt("thum", id, "webp")
+	if err := ReadFileTo(w, path); err != nil {
+		log.Printf("HandleGetThumbnail error path=%s: %v\n", path, err)
+		w.WriteHeader(500)
+	}
+}
+
+func HandleGetMetadata(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	path := paths.MakePath("meta", id)
+	if err := ReadFileTo(w, path); err != nil {
+		log.Printf("HandleGetMetadata error path=%s: %v\n", id, err)
 		w.WriteHeader(500)
 	}
 }

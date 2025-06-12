@@ -4,35 +4,32 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/coldstar-507/media-server/internal/config"
 	"github.com/coldstar-507/media-server/internal/handlers"
 	"github.com/coldstar-507/media-server/internal/paths"
 	"github.com/coldstar-507/router/router_utils"
 	"github.com/coldstar-507/utils/http_utils"
 )
 
-// files are saved on disk in this way:
-// as a single []byte
-// {media data} is a common media, like jpg, png, mp4, etc..
-// [u16 len of metadata, metadata flatbuffer, media data]
-
-// this should be part of the ENV in production
-var (
-	ip         string                     = "localhost"
-	place      router_utils.SERVER_NUMBER = "2000"
-	routerType router_utils.ROUTER_TYPE   = router_utils.MEDIA_ROUTER
-)
-
 func main() {
 
 	log.Println("Starting hook manager")
-	go handlers.HookManager.Run()
+	// go handlers.HookManager.Run()
 
 	log.Println("Starting local router")
-	router_utils.InitLocalServer(ip, place, routerType)
+	conf := config.LoadConfig()
+	router_utils.InitLocalServer(conf.SERVER_IP, conf.SERVER_PLACE, conf.SERVER_TYPE)
+	log.Printf("SERVER_IP=%s, SERVER_PLACE=%d, SERVER_TYPE=%s\n",
+		conf.SERVER_IP, conf.SERVER_PLACE, conf.SERVER_TYPE)
+
 	go router_utils.LocalServer.Run()
 
 	paths.InitWD()
 	go handlers.PriceAgent.Run()
+
+	go handlers.RunMediaWriteRequestsHandler()
+
+	handlers.InitCoords()
 
 	// logger.InitLogger() // We don't use this logger yet
 	// defer logger.CloseLogger()
@@ -43,20 +40,26 @@ func main() {
 	mux.HandleFunc("GET /full-router", router_utils.HandleRouterStatus)
 
 	mux.HandleFunc("GET /media/{id}", handlers.HandleGetMedia)
-	mux.HandleFunc("POST /media/{id}", handlers.HandlePostMedia)
+	mux.HandleFunc("POST /media/{thum}", handlers.HandlePostMedia)
+	mux.HandleFunc("POST /media", handlers.HandlePostMedia)
 	mux.HandleFunc("DELETE /media/{id}", handlers.HandleDeleteMedia)
-
-	mux.HandleFunc("GET /stream-media/{id}", handlers.HandleStreamMedia)
 	mux.HandleFunc("GET /metadata/{id}", handlers.HandleGetMetadata)
+	mux.HandleFunc("GET /thumbnail/{id}", handlers.HandleGetThumbnail)
+
+	// mux.HandleFunc("GET /stream-media/{id}", handlers.HandleStreamMedia)
 
 	mux.HandleFunc("GET /rates/{until}/{periodicity}", handlers.HandleRatesRequest)
 	// payments are currently sent to chat server with pushId
 	// they aren't though
-	mux.HandleFunc("GET /payment/{id}", handlers.HandleGetPayment)
-	mux.HandleFunc("POST /payment/{id}", handlers.HandlePostPayment)
+	// mux.HandleFunc("GET /payment/{id}", handlers.HandleGetPayment)
+	// mux.HandleFunc("POST /payment/{id}", handlers.HandlePostPayment)
 
-	mux.HandleFunc("POST /generate-media", handlers.HandleGenerateMedia)
-	mux.HandleFunc("POST /generate-media-hook", handlers.HandleGenerateMediaHook)
+	// mux.HandleFunc("POST /generate-media", handlers.HandleGenerateMedia)
+	// mux.HandleFunc("POST /generate-media-hook", handlers.HandleGenerateMediaHook)
+
+	mux.HandleFunc("GET /country-coords/{country}", handlers.HandleGetCoords)
+	mux.HandleFunc("GET /countries", handlers.HandleGetCountries)
+	mux.HandleFunc("GET /countries-pretty", handlers.HandleGetCountriesPretty)
 
 	server := http_utils.ApplyMiddlewares(mux, http_utils.StatusLogger)
 

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math"
 	"net/http"
 	"os"
 	"slices"
@@ -25,9 +26,10 @@ import (
 
 var (
 	wocUrl  = "https://api.whatsonchain.com/v1/bsv/main/exchangerate/historical?from=%d&to=%d"
-	timeFmt = "2022-11-12T00:43:55.000Z"
-	ogUrl   = "https://api.orangegateway.com/graphql"
-	minFmt  = "2006-01-02 15:04:05"
+	timeFmt = "2006-01-02T15:04:05.000Z"
+	// timeFmt = "2022-11-12T00:43:55.000Z"
+	ogUrl  = "https://api.orangegateway.com/graphql"
+	minFmt = "2006-01-02 15:04:05"
 )
 
 type TimeRate struct {
@@ -72,6 +74,19 @@ func pathOfPeriodicity(periodicity string) string {
 		return paths.FIFTEEN_MIN_RATES_FILE
 	default:
 		panic("pathOfPeriodicity(" + periodicity + ")")
+	}
+}
+
+func minutesOfPeriodicity(periodicity string) float64 {
+	switch periodicity {
+	case "day", "":
+		return 60 * 24
+	case "hour":
+		return 60
+	case "minute15":
+		return 15
+	default:
+		panic("minutesOfPeriodicity(" + periodicity + ")")
 	}
 }
 
@@ -212,36 +227,29 @@ func appendFrom(latest int64, periodicity string) error {
 }
 
 func readUntil(w io.Writer, until int64, periodicity string) error {
-	// Open the file
 	file, err := os.Open(pathOfPeriodicity(periodicity))
 	if err != nil {
 		return fmt.Errorf("failed to open file: %w", err)
 	}
 	defer file.Close()
 
-	// Get the file size
 	fileInfo, err := file.Stat()
 	if err != nil {
 		return fmt.Errorf("failed to stat file: %w", err)
 	}
 
-	// Get the size of the file
 	fileSize := fileInfo.Size()
 
-	// Define the block size (12 bytes)
 	blockSize := int64(12)
 
-	// Loop to read 12-byte blocks from the end
 	var rate float32
 	var time int64
 	for position := fileSize - blockSize; position >= 0; position -= blockSize {
-		// Seek to the position
 		_, err := file.Seek(position, 0)
 		if err != nil {
 			return fmt.Errorf("failed to seek: %w", err)
 		}
 
-		// Read the 12-byte block
 		if err = binary.Read(file, binary.BigEndian, &rate); err != nil {
 			return fmt.Errorf("failed to read rate: %w", err)
 		}
@@ -252,9 +260,10 @@ func readUntil(w io.Writer, until int64, periodicity string) error {
 		if time > until {
 			binary.Write(w, binary.BigEndian, rate)
 			binary.Write(w, binary.BigEndian, time)
+		} else {
+			break
 		}
-		// Process the block (for now, print it)
-		fmt.Printf("Rate/Time at position %d: rate: %f, time: %d\n", position, rate, time)
+		// fmt.Printf("Rate/Time at position %d: rate: %f, time: %d\n", position, rate, time)
 	}
 
 	return nil
@@ -294,12 +303,18 @@ func latestTime(periodicity string) (time.Time, error) {
 }
 
 func makeq(from, to time.Time, periodicity string) ([]byte, error) {
+	minutes := math.Ceil(to.Sub(from).Minutes())
+	limit := math.Ceil(minutes / minutesOfPeriodicity(periodicity))
+
+	log.Printf("makeQ: fmtFrom:%s, fmtTo:%s, diff:%.0f minutes, limit:%.0f\n",
+		from.Format(timeFmt), to.Format(timeFmt), minutes, limit)
+
 	m := map[string]any{
 		"query": `query ($instrument_id: String!, $limit: Int, $date_range: DateRangeInput, $periodicity: InstrumentHistoryPeriodicity) {
    instrument_price_bars (instrument_id: $instrument_id, limit: $limit, date_range: $date_range, periodicity: $periodicity) { instrument_id, ts, close }}`,
 		"variables": map[string]any{
 			"instrument_id": "BSVUSD",
-			"limit":         800,
+			"limit":         limit,
 			"data_range": map[string]any{
 				"time_from": from.UTC().Format(timeFmt),
 				"time_to":   to.UTC().Format(timeFmt),
@@ -311,6 +326,7 @@ func makeq(from, to time.Time, periodicity string) ([]byte, error) {
 }
 
 func getOgFrom(from time.Time, periodicity string) ([]TimeRate, error) {
+
 	q, err := makeq(from, time.Now(), periodicity)
 	if err != nil {
 		return nil, err

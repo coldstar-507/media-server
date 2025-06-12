@@ -31,26 +31,26 @@ func TestCheckIfPermanent(t *testing.T) {
 	}
 }
 
-func TestHandleWriteMedia(t *testing.T) {
-	val := bytes.NewReader(content)
-	if err := handlers.WriteMedia(id, permanent, val); err != nil {
-		t.Error("TestHandleWriteMedia error writing media :", err)
-	}
-}
+// func TestHandleWriteMedia(t *testing.T) {
+// 	val := bytes.NewReader(content)
+// 	if err := handlers.WriteMedia(id, permanent, val); err != nil {
+// 		t.Error("TestHandleWriteMedia error writing media :", err)
+// 	}
+// }
 
-func TestHandleStreamMedia(t *testing.T) {
-	buf := bytes.NewBuffer(make([]byte, 0, 20))
-	if err := handlers.StreamMedia(id, permanent, buf); err != nil {
-		t.Error("TestHandleStreamMedia error streaming media: ", err)
-	}
-	if !bytes.Equal(buf.Bytes(), data) {
-		t.Errorf("TestHandleReadMedia error: expected=%v, got=%v\n", data, buf.Bytes())
-	}
-}
+// func TestHandleStreamMedia(t *testing.T) {
+// 	buf := bytes.NewBuffer(make([]byte, 0, 20))
+// 	if err := handlers.StreamMedia(id, permanent, buf); err != nil {
+// 		t.Error("TestHandleStreamMedia error streaming media: ", err)
+// 	}
+// 	if !bytes.Equal(buf.Bytes(), data) {
+// 		t.Errorf("TestHandleReadMedia error: expected=%v, got=%v\n", data, buf.Bytes())
+// 	}
+// }
 
 func TestHandleReadMetadata(t *testing.T) {
 	buf := bytes.NewBuffer(make([]byte, 0, 20))
-	if err := handlers.ReadMetadata(id, permanent, buf); err != nil {
+	if err := handlers.ReadFileTo(buf, paths.MakePath("meta", id)); err != nil {
 		t.Error("TestHandleReadMetadata error streaming media: ", err)
 	}
 	if !bytes.Equal(buf.Bytes(), metadata) {
@@ -61,7 +61,7 @@ func TestHandleReadMetadata(t *testing.T) {
 
 func TestHandleReadMedia(t *testing.T) {
 	buf := bytes.NewBuffer(make([]byte, 0, 20))
-	if err := handlers.ReadMedia(id, permanent, buf); err != nil {
+	if err := handlers.ReadFileTo(buf, paths.MakePath("data", id)); err != nil {
 		t.Error("TestHandleReadMedia error reading media: ", err)
 	}
 	if !bytes.Equal(buf.Bytes(), content) {
@@ -70,8 +70,8 @@ func TestHandleReadMedia(t *testing.T) {
 	}
 }
 
-func TestRemoveMedia(t *testing.T) {
-	if err := handlers.RemoveMedia(id, permanent); err != nil {
-		t.Error("TestRemoveMedia error:", err)
-	}
-}
+// func TestRemoveMedia(t *testing.T) {
+// 	if err := handlers.DeleteMedia(id); err != nil {
+// 		t.Error("TestRemoveMedia error:", err)
+// 	}
+// }
