@@ -4,7 +4,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/coldstar-507/router/router_utils"
+	"github.com/coldstar-507/router-server/router_utils"
 )
 
 var Config *router_utils.Config

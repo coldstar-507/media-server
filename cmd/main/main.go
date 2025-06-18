@@ -7,8 +7,8 @@ import (
 	"github.com/coldstar-507/media-server/internal/config"
 	"github.com/coldstar-507/media-server/internal/handlers"
 	"github.com/coldstar-507/media-server/internal/paths"
-	"github.com/coldstar-507/router/router_utils"
-	"github.com/coldstar-507/utils/http_utils"
+	"github.com/coldstar-507/router-server/router_utils"
+	"github.com/coldstar-507/utils2"
 )
 
 func main() {
@@ -61,7 +61,7 @@ func main() {
 	mux.HandleFunc("GET /countries", handlers.HandleGetCountries)
 	mux.HandleFunc("GET /countries-pretty", handlers.HandleGetCountriesPretty)
 
-	server := http_utils.ApplyMiddlewares(mux, http_utils.StatusLogger)
+	server := utils2.ApplyMiddlewares(mux, utils2.StatusLogger)
 
 	addr := "0.0.0.0:8081"
 	// crt, key := "../service-accounts/server.crt", "../service-accounts/server.key"

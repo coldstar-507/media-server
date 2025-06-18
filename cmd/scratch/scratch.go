@@ -3,13 +3,13 @@ package main
 import (
 	_ "embed"
 	"encoding/json"
-	"fmt"
-	"log"
+	// "fmt"
+	// "log"
 	"net/http"
 )
 
-//go:embed assets/countries.geo.json
-var countriesJSON []byte
+// //go:embed assets/countries.geo.json
+// var countriesJSON []byte
 
 var geoData GeoData
 
@@ -36,17 +36,17 @@ type GeoData struct {
 	} `json:"features"`
 }
 
-func InitCoords() {
-	err := json.Unmarshal(countriesJSON, &geoData)
-	if err != nil {
-		log.Fatal("initCoords: error unmarshaling JSON:", err)
-	}
-	coords_ = make(map[string]any, len(geoData.Features))
-	for _, x := range geoData.Features {
-		fmt.Println(x.Properties.Name)
-		coords_[x.Properties.Name] = x.Geometry
-	}
-}
+// func InitCoords() {
+// 	err := json.Unmarshal(countriesJSON, &geoData)
+// 	if err != nil {
+// 		log.Fatal("initCoords: error unmarshaling JSON:", err)
+// 	}
+// 	coords_ = make(map[string]any, len(geoData.Features))
+// 	for _, x := range geoData.Features {
+// 		fmt.Println(x.Properties.Name)
+// 		coords_[x.Properties.Name] = x.Geometry
+// 	}
+// }
 
 func HandleGetCoords(w http.ResponseWriter, r *http.Request) {
 	countryName := r.PathValue("country")
@@ -58,14 +58,14 @@ func HandleGetCoords(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	InitCoords()
-	country := "Canada"
-	c := coords_[country]
-	e, err := json.MarshalIndent(c, "", "   ")
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(string(e))
+	// InitCoords()
+	// country := "Canada"
+	// c := coords_[country]
+	// e, err := json.MarshalIndent(c, "", "   ")
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// fmt.Println(string(e))
 }
 
 // func main() {

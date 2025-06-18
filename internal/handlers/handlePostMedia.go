@@ -24,8 +24,8 @@ import (
 	"github.com/coldstar-507/media-server/internal/config"
 	"github.com/coldstar-507/media-server/internal/paths"
 	media_utils "github.com/coldstar-507/media-server/internal/utils"
-	"github.com/coldstar-507/utils/id_utils"
-	"github.com/coldstar-507/utils/utils"
+	"github.com/coldstar-507/utils2"
+	// "github.com/coldstar-507/utils/utils"
 	"golang.org/x/sync/errgroup"
 	// "golang.org/x/sync/errgroup"
 	// "github.com/gographics/imagick/imagick"
@@ -80,7 +80,7 @@ func RunMediaWriteRequestsHandler() {
 		select {
 		case req := <-mwr:
 			log.Printf("MediaWriteRequest")
-			idf = utils.If(req.perm, nil, tmp)
+			idf = utils2.If(req.perm, nil, tmp)
 			req.res <- handleWriteRequest(req, idbuf, idf)
 
 		case <-daily.C:
@@ -141,7 +141,7 @@ func handleWriteRequest(req *MediaWriteRequest, idbuf *bytes.Buffer, idf *os.Fil
 	ref := mr.Reference(nil)
 	ref.MutateTimestamp(time.Now().UnixMilli())
 
-	id_utils.WriteMediaReference(idbuf, ref)
+	utils2.WriteMediaReference(idbuf, ref)
 	defer idbuf.Reset()
 	strid := hex.EncodeToString(idbuf.Bytes())
 	ogExt := media_utils.OriginalExtOf(strid)
@@ -243,9 +243,9 @@ func DeleteMedia(id string) {
 func HandlePostMedia(w http.ResponseWriter, r *http.Request) {
 	thum, _ := strconv.Atoi(r.PathValue("thum"))
 	var mdlen uint16
-	err0 := utils.ReadBin(r.Body, &mdlen)
+	err0 := utils2.ReadBin(r.Body, &mdlen)
 	metadata := make([]byte, mdlen)
-	err1 := utils.ReadBin(r.Body, metadata)
+	err1 := utils2.ReadBin(r.Body, metadata)
 	if err := errors.Join(err0, err1); err != nil {
 		w.WriteHeader(500)
 		return
@@ -263,14 +263,14 @@ func HandlePostMedia(w http.ResponseWriter, r *http.Request) {
 		res:      ch,
 		perm:     ref.Perm(),
 		metadata: metadata,
-		data:     utils.If(meta.HasData(), r.Body, nil),
+		data:     utils2.If(meta.HasData(), r.Body, nil),
 		thumsize: thum,
 	}
 	if err := <-ch; err != nil {
 		log.Println("HandlePostMedia2: error:", err)
 		w.WriteHeader(501)
 	}
-	id_utils.WriteMediaReference(w, ref)
+	utils2.WriteMediaReference(w, ref)
 }
 
 // type MediaWriteRequest struct {
@@ -333,7 +333,7 @@ func HandlePostMedia(w http.ResponseWriter, r *http.Request) {
 // 	ref := mr.Reference(nil)
 // 	ref.MutateTimestamp(time.Now().UnixMilli())
 
-// 	id_utils.WriteMediaReference(idbuf, ref)
+// 	utils2.WriteMediaReference(idbuf, ref)
 // 	defer idbuf.Reset()
 // 	strid := hex.EncodeToString(idbuf.Bytes())
 // 	if idf != nil {
@@ -430,9 +430,9 @@ func HandlePostMedia(w http.ResponseWriter, r *http.Request) {
 // 	t, _ := strconv.Atoi(r.PathValue("type"))
 
 // 	var mdlen uint16
-// 	err0 := utils.ReadBin(r.Body, &mdlen)
+// 	err0 := utils2.ReadBin(r.Body, &mdlen)
 // 	metadata := make([]byte, mdlen)
-// 	err1 := utils.ReadBin(r.Body, metadata)
+// 	err1 := utils2.ReadBin(r.Body, metadata)
 // 	if err := errors.Join(err0, err1); err != nil {
 // 		w.WriteHeader(500)
 // 		return
@@ -452,7 +452,7 @@ func HandlePostMedia(w http.ResponseWriter, r *http.Request) {
 // 		res:           ch,
 // 		perm:          ref.Perm(),
 // 		metadata:      metadata,
-// 		data:          utils.If(meta.HasData(), r.Body, nil),
+// 		data:          utils2.If(meta.HasData(), r.Body, nil),
 // 		w:             width,
 // 		h:             height,
 // 		t:             t,
@@ -462,7 +462,7 @@ func HandlePostMedia(w http.ResponseWriter, r *http.Request) {
 // 		log.Println("HandlePostMedia2: error:", err)
 // 		w.WriteHeader(501)
 // 	}
-// 	id_utils.WriteMediaReference(w, ref)
+// 	utils2.WriteMediaReference(w, ref)
 // }
 
 // w, h := meta.Size.Width, meta.Size.Height
@@ -474,7 +474,7 @@ func HandlePostMedia(w http.ResponseWriter, r *http.Request) {
 // 	ref := mr.Reference(nil)
 // 	ref.MutateTimestamp(time.Now().UnixMilli())
 
-// 	id_utils.WriteMediaReference(idbuf, ref)
+// 	utils2.WriteMediaReference(idbuf, ref)
 // 	defer idbuf.Reset()
 // 	strid := hex.EncodeToString(idbuf.Bytes())
 // 	if idf != nil {
@@ -636,6 +636,6 @@ func HandlePostMedia(w http.ResponseWriter, r *http.Request) {
 // 		if err = <-ch; err != nil {
 // 			w.WriteHeader(503)
 // 		}
-// 		id_utils.WriteMediaRef(w, ref)
+// 		utils2.WriteMediaRef(w, ref)
 // 	}
 // }
