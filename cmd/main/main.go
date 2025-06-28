@@ -39,6 +39,8 @@ func main() {
 	mux.HandleFunc("GET /local-router", router_utils.HandleServerStatus)
 	mux.HandleFunc("GET /full-router", router_utils.HandleRouterStatus)
 
+	mux.HandleFunc("GET /storage-info", handlers.HandleGetStorageInfo)
+
 	mux.HandleFunc("GET /media/{id}", handlers.HandleGetMedia)
 	mux.HandleFunc("POST /media/{thum}", handlers.HandlePostMedia)
 	mux.HandleFunc("POST /media", handlers.HandlePostMedia)

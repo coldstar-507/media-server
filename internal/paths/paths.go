@@ -1,11 +1,16 @@
 package paths
 
 import (
+	"errors"
 	"os"
+	"path"
 	"path/filepath"
+
+	"github.com/coldstar-507/utils2"
 )
 
 var (
+	ServerFolder           string
 	TEMPORARY_PATH         string
 	PERMANENT_PATH         string
 	LOGS_PATH              string
@@ -18,20 +23,36 @@ var (
 )
 
 func InitWD() {
-	PERMANENT_PATH = os.Getenv("PERMANENT_PATH")
-	TEMPORARY_PATH = os.Getenv("TEMPORARY_PATH")
+	ServerFolder = os.Getenv("SERVER_FOLDER")
+	utils2.Assert(len(ServerFolder) > 0, "Undefined SERVER_FOLDER")
+	PERMANENT_PATH = path.Join(ServerFolder, "permanent")
+	TEMPORARY_PATH = path.Join(ServerFolder, "temporary")
+	errMkdirs := errors.Join(
+		os.MkdirAll(path.Join(PERMANENT_PATH, "meta"), 0755),
+		os.MkdirAll(path.Join(PERMANENT_PATH, "data"), 0755),
+		os.MkdirAll(path.Join(PERMANENT_PATH, "thum"), 0755),
+		os.MkdirAll(path.Join(PERMANENT_PATH, "temp"), 0755),
+
+		os.MkdirAll(path.Join(TEMPORARY_PATH, "meta"), 0755),
+		os.MkdirAll(path.Join(TEMPORARY_PATH, "data"), 0755),
+		os.MkdirAll(path.Join(TEMPORARY_PATH, "thum"), 0755),
+		os.MkdirAll(path.Join(TEMPORARY_PATH, "temp"), 0755),
+	)
+	utils2.Must(errMkdirs)
+	// PERMANENT_PATH = os.Getenv("PERMANENT_PATH")
+	// TEMPORARY_PATH = os.Getenv("TEMPORARY_PATH")
 	LOGS_PATH = os.Getenv("LOGS_PATH")
 	RATES_PATH = os.Getenv("RATES_PATH")
 
-	if len(PERMANENT_PATH) == 0 {
-		panic("PERMANENT_PATH undefined, please check ENV file at root of project")
-	} else if len(TEMPORARY_PATH) == 0 {
-		panic("TEMPORARY_PATH undefined, please check ENV file at root of project")
-	} else if len(LOGS_PATH) == 0 {
-		panic("LOGS_PATH undefined, please check ENV file at root of project")
-	} else if len(RATES_PATH) == 0 {
-		panic("RATES_PATH undefined, please check ENV file at root of project")
-	}
+	// if len(PERMANENT_PATH) == 0 {
+	// 	panic("PERMANENT_PATH undefined, please check ENV file at root of project")
+	// } else if len(TEMPORARY_PATH) == 0 {
+	// 	panic("TEMPORARY_PATH undefined, please check ENV file at root of project")
+	// } else if len(LOGS_PATH) == 0 {
+	// 	panic("LOGS_PATH undefined, please check ENV file at root of project")
+	// } else if len(RATES_PATH) == 0 {
+	// 	panic("RATES_PATH undefined, please check ENV file at root of project")
+	// }
 
 	TEMP_IDS_FILE = filepath.Join(TEMPORARY_PATH, "ids")
 	PERM_IDS_FILE = filepath.Join(PERMANENT_PATH, "ids")
